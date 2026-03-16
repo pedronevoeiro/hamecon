@@ -72,10 +72,9 @@ export function QuoteForm({ products }: QuoteFormProps) {
     return (
       <div className="rounded-2xl border border-[#1e4c36]/20 bg-[#1e4c36]/5 p-8 text-center">
         <CheckCircle className="mx-auto h-16 w-16 text-[#1e4c36]" />
-        <h3 className="mt-4 text-2xl font-bold text-gray-900">Solicitação Enviada!</h3>
+        <h3 className="mt-4 text-2xl font-bold text-gray-900">Orçamento Enviado!</h3>
         <p className="mt-2 text-gray-600">
-          Obrigado pelo interesse! Enviamos uma confirmação para <strong>{form.email}</strong>.
-          Nossa equipe entrará em contato em até 24 horas.
+          Seu pedido de orçamento foi enviado para nossa equipe. Em breve você receberá um contato com a proposta personalizada.
         </p>
         <Button
           className="mt-6 bg-[#1e4c36] hover:bg-[#163a29]"
