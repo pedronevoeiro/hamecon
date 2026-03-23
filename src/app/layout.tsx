@@ -46,7 +46,7 @@ export const metadata: Metadata = {
       "Brindes corporativos personalizados com a sua marca. Solicite seu orçamento sem compromisso.",
     images: [
       {
-        url: "/og-image.jpg",
+        url: "/opengraph-image",
         width: 1200,
         height: 630,
         alt: "Hamecon - Brindes Corporativos Personalizados",
