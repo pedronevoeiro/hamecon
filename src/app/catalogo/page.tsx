@@ -32,6 +32,26 @@ const products = catalogData as Product[];
 
 const categories = Array.from(new Set(products.map((p) => p.cat))).sort();
 
+/** Hand-picked featured SKUs — shown first when sorted by relevance */
+const FEATURED_SKUS = new Set([
+  // Canetas - best sellers, variety of price points
+  "CP0401T", "CP2000", "CM3900", "CM0220", "CM0107C", "CM3880",
+  // Cadernos e Blocos
+  "CAD003", "CAD437", "BL037", "BL031",
+  // Garrafas e Copos
+  "GA7850", "GA7610", "CO9700", "GA8900D", "CO9800",
+  // Canecas
+  "CA9510", "CA0140", "CV250", "XC001",
+  // Mochilas e Bolsas
+  "BAC016", "BAC017", "BTN201", "BP0011", "BTN090", "BP0001",
+  // Kits
+  "KC0124P", "CJ100", "KV0150P",
+  // Diversos
+  "SVT003", "NE107", "LC210",
+  // Chaveiros
+  "CH53074", "CH7010P",
+]);
+
 function formatPrice(value: number) {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
@@ -75,8 +95,8 @@ function ColorPicker({
 export default function CatalogoPage() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("Todos");
-  const [sort, setSort] = useState<"price-asc" | "price-desc" | "name">(
-    "price-asc"
+  const [sort, setSort] = useState<"relevance" | "price-asc" | "price-desc" | "name">(
+    "relevance"
   );
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [mainImage, setMainImage] = useState(0);
@@ -136,6 +156,15 @@ export default function CatalogoPage() {
     }
 
     switch (sort) {
+      case "relevance":
+        result = [...result].sort((a, b) => {
+          const aFeat = FEATURED_SKUS.has(a.sku) ? 0 : 1;
+          const bFeat = FEATURED_SKUS.has(b.sku) ? 0 : 1;
+          if (aFeat !== bFeat) return aFeat - bFeat;
+          // Within featured, sort by number of images (best content first)
+          return b.imgs.length - a.imgs.length;
+        });
+        break;
       case "price-asc":
         result = [...result].sort((a, b) => a.preco - b.preco);
         break;
@@ -211,6 +240,7 @@ export default function CatalogoPage() {
                 onChange={(e) => setSort(e.target.value as typeof sort)}
                 className="w-full appearance-none rounded-lg border border-gray-200 bg-white py-2.5 pl-3 pr-8 text-sm font-medium text-gray-700 outline-none transition-colors focus:border-[#1e4c36] sm:w-auto"
               >
+                <option value="relevance">Relevância</option>
                 <option value="price-asc">Menor preço</option>
                 <option value="price-desc">Maior preço</option>
                 <option value="name">Nome A-Z</option>
