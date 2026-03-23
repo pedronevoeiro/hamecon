@@ -1,7 +1,7 @@
 "use client";
 
 import { useCart } from "@/contexts/cart-context";
-import { X, Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
+import { X, Minus, Plus, Trash2, ShoppingBag, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
@@ -156,6 +156,14 @@ export function CartDrawer() {
             >
               <Link href="/checkout">Finalizar Pedido</Link>
             </Button>
+
+            <button
+              onClick={() => setIsOpen(false)}
+              className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg py-2.5 text-sm font-medium text-gray-500 transition-colors hover:text-[#1e4c36]"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Continuar comprando
+            </button>
           </div>
         )}
       </div>

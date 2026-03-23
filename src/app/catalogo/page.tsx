@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import { Search, X, ChevronDown, ShoppingBag, Plus } from "lucide-react";
+import { Search, X, ChevronDown, ShoppingBag, Plus, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/cart-context";
+import { toast } from "sonner";
 import catalogData from "@/data/catalogo.json";
 
 type Product = {
@@ -35,7 +36,21 @@ export default function CatalogoPage() {
   );
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [mainImage, setMainImage] = useState(0);
-  const { addItem } = useCart();
+  const { addItem, setIsOpen: setCartOpen } = useCart();
+
+  const handleAddItem = useCallback(
+    (p: { id: number; nome: string; sku: string; preco: number; img: string }) => {
+      addItem(p);
+      toast.success(`${p.nome} adicionado ao carrinho`, {
+        action: {
+          label: "Ver carrinho",
+          onClick: () => setCartOpen(true),
+        },
+        duration: 3000,
+      });
+    },
+    [addItem, setCartOpen]
+  );
 
   const filtered = useMemo(() => {
     let result = products;
@@ -233,7 +248,7 @@ export default function CatalogoPage() {
                     <div className="px-4 pb-4">
                       <button
                         onClick={() =>
-                          addItem({
+                          handleAddItem({
                             id: p.id,
                             nome: p.nome,
                             sku: p.sku,
@@ -344,7 +359,7 @@ export default function CatalogoPage() {
                   size="lg"
                   className="mt-6 w-full bg-[#1e4c36] hover:bg-[#163a29]"
                   onClick={() => {
-                    addItem({
+                    handleAddItem({
                       id: selectedProduct.id,
                       nome: selectedProduct.nome,
                       sku: selectedProduct.sku,
