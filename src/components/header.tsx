@@ -3,8 +3,9 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useCart } from "@/contexts/cart-context";
 
 const navLinks = [
   { href: "/#produtos", label: "Produtos" },
@@ -16,6 +17,7 @@ const navLinks = [
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
+  const { totalItems, setIsOpen: setCartOpen } = useCart();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-white/80 backdrop-blur-xl">
@@ -36,19 +38,35 @@ export function Header() {
           ))}
         </nav>
 
-        <div className="hidden md:block">
-          <Button asChild className="bg-[#1e4c36] hover:bg-[#163a29]">
-            <Link href="/#orcamento">Solicitar Orçamento</Link>
-          </Button>
-        </div>
+        <div className="flex items-center gap-3">
+          {/* Cart button */}
+          <button
+            onClick={() => setCartOpen(true)}
+            className="relative flex h-10 w-10 items-center justify-center rounded-full text-gray-600 transition-colors hover:bg-gray-100 hover:text-[#1e4c36]"
+            aria-label="Carrinho"
+          >
+            <ShoppingBag className="h-5 w-5" />
+            {totalItems > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#1e4c36] text-[10px] font-bold text-white">
+                {totalItems > 99 ? "99+" : totalItems}
+              </span>
+            )}
+          </button>
 
-        <button
-          className="md:hidden"
-          onClick={() => setIsOpen(!isOpen)}
-          aria-label="Menu"
-        >
-          {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-        </button>
+          <div className="hidden md:block">
+            <Button asChild className="bg-[#1e4c36] hover:bg-[#163a29]">
+              <Link href="/#orcamento">Solicitar Orçamento</Link>
+            </Button>
+          </div>
+
+          <button
+            className="md:hidden"
+            onClick={() => setIsOpen(!isOpen)}
+            aria-label="Menu"
+          >
+            {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
+        </div>
       </div>
 
       {isOpen && (

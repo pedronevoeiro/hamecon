@@ -4,6 +4,8 @@ import "./globals.css";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { Toaster } from "@/components/ui/sonner";
+import { CartProvider } from "@/contexts/cart-context";
+import { CartDrawer } from "@/components/cart-drawer";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -88,10 +90,13 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       </head>
       <body className={`${inter.variable} font-sans antialiased`}>
-        <Header />
-        <main>{children}</main>
-        <Footer />
-        <Toaster />
+        <CartProvider>
+          <Header />
+          <main>{children}</main>
+          <Footer />
+          <CartDrawer />
+          <Toaster />
+        </CartProvider>
       </body>
     </html>
   );

@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import { Search, X, ChevronDown, Send } from "lucide-react";
+import { Search, X, ChevronDown, ShoppingBag, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useCart } from "@/contexts/cart-context";
 import catalogData from "@/data/catalogo.json";
 
 type Product = {
@@ -34,6 +35,7 @@ export default function CatalogoPage() {
   );
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [mainImage, setMainImage] = useState(0);
+  const { addItem } = useCart();
 
   const filtered = useMemo(() => {
     let result = products;
@@ -186,45 +188,66 @@ export default function CatalogoPage() {
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {filtered.map((p) => (
-                  <button
+                  <div
                     key={p.id}
-                    onClick={() => openProduct(p)}
-                    className="group overflow-hidden rounded-xl border border-gray-100 bg-white text-left shadow-sm transition-all hover:border-[#1e4c36]/30 hover:shadow-lg"
+                    className="group overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm transition-all hover:border-[#1e4c36]/30 hover:shadow-lg"
                   >
-                    <div className="relative aspect-square overflow-hidden bg-gray-50">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={p.img}
-                        alt={p.nome}
-                        loading="lazy"
-                        className="h-full w-full object-contain p-3 transition-transform duration-300 group-hover:scale-105"
-                      />
-                      {p.imgs.length > 1 && (
-                        <span className="absolute left-3 top-3 rounded-full bg-[#1e4c36] px-2.5 py-0.5 text-[11px] font-semibold text-white shadow">
-                          {p.imgs.length} fotos
-                        </span>
-                      )}
-                    </div>
-                    <div className="p-4">
-                      <p className="text-[11px] font-medium uppercase tracking-wider text-gray-400">
-                        {p.sku}
-                      </p>
-                      <span className="mt-0.5 inline-block rounded bg-gray-100 px-2 py-0.5 text-[11px] text-gray-500">
-                        {p.cat}
-                      </span>
-                      <h3 className="mt-1.5 line-clamp-2 text-sm font-semibold leading-snug text-gray-900">
-                        {p.nome}
-                      </h3>
-                      <div className="mt-3 border-t border-gray-100 pt-3">
-                        <p className="text-lg font-bold text-[#1e4c36]">
-                          {formatPrice(p.preco)}<span className="text-xs font-medium text-gray-400">/un</span>
-                        </p>
-                        <p className="text-[11px] text-gray-400">
-                          personalização inclusa
-                        </p>
+                    <button
+                      onClick={() => openProduct(p)}
+                      className="w-full text-left"
+                    >
+                      <div className="relative aspect-square overflow-hidden bg-gray-50">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={p.img}
+                          alt={p.nome}
+                          loading="lazy"
+                          className="h-full w-full object-contain p-3 transition-transform duration-300 group-hover:scale-105"
+                        />
+                        {p.imgs.length > 1 && (
+                          <span className="absolute left-3 top-3 rounded-full bg-[#1e4c36] px-2.5 py-0.5 text-[11px] font-semibold text-white shadow">
+                            {p.imgs.length} fotos
+                          </span>
+                        )}
                       </div>
+                      <div className="p-4">
+                        <p className="text-[11px] font-medium uppercase tracking-wider text-gray-400">
+                          {p.sku}
+                        </p>
+                        <span className="mt-0.5 inline-block rounded bg-gray-100 px-2 py-0.5 text-[11px] text-gray-500">
+                          {p.cat}
+                        </span>
+                        <h3 className="mt-1.5 line-clamp-2 text-sm font-semibold leading-snug text-gray-900">
+                          {p.nome}
+                        </h3>
+                        <div className="mt-3 border-t border-gray-100 pt-3">
+                          <p className="text-lg font-bold text-[#1e4c36]">
+                            {formatPrice(p.preco)}<span className="text-xs font-medium text-gray-400">/un</span>
+                          </p>
+                          <p className="text-[11px] text-gray-400">
+                            personalização inclusa
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                    <div className="px-4 pb-4">
+                      <button
+                        onClick={() =>
+                          addItem({
+                            id: p.id,
+                            nome: p.nome,
+                            sku: p.sku,
+                            preco: p.preco,
+                            img: p.img,
+                          })
+                        }
+                        className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#1e4c36] py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#163a29]"
+                      >
+                        <Plus className="h-4 w-4" />
+                        Adicionar ao carrinho
+                      </button>
                     </div>
-                  </button>
+                  </div>
                 ))}
               </div>
             )}
@@ -318,14 +341,21 @@ export default function CatalogoPage() {
                 ) : null}
 
                 <Button
-                  asChild
                   size="lg"
                   className="mt-6 w-full bg-[#1e4c36] hover:bg-[#163a29]"
+                  onClick={() => {
+                    addItem({
+                      id: selectedProduct.id,
+                      nome: selectedProduct.nome,
+                      sku: selectedProduct.sku,
+                      preco: selectedProduct.preco,
+                      img: selectedProduct.img,
+                    });
+                    closeModal();
+                  }}
                 >
-                  <a href="/#orcamento">
-                    <Send className="mr-2 h-4 w-4" />
-                    Solicitar Orçamento
-                  </a>
+                  <ShoppingBag className="mr-2 h-4 w-4" />
+                  Adicionar ao carrinho
                 </Button>
               </div>
             </div>
