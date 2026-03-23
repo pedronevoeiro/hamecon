@@ -74,7 +74,7 @@ export default function Home() {
                 </a>
               </Button>
               <Button asChild variant="outline" size="lg" className="border-2 border-white bg-transparent px-8 text-lg text-white hover:bg-white/10">
-                <a href="#produtos">Ver Produtos</a>
+                <a href="/catalogo">Ver Catálogo Completo</a>
               </Button>
             </div>
 
@@ -159,23 +159,26 @@ export default function Home() {
                   </h3>
                   <p className="mt-1.5 text-sm text-gray-500 leading-relaxed">{product.desc}</p>
                   <a
-                    href="#orcamento"
+                    href="/catalogo"
                     className="mt-3 inline-flex items-center text-sm font-medium text-[#1e4c36] transition-colors hover:text-[#163a29]"
                   >
-                    Solicitar orçamento →
+                    Ver no catálogo →
                   </a>
                 </CardContent>
               </Card>
             ))}
           </div>
 
-          <div className="mt-10 text-center">
+          <div className="mt-10 flex flex-col items-center gap-3 text-center">
             <Button asChild size="lg" className="bg-[#1e4c36] px-8 hover:bg-[#163a29]">
-              <a href="#orcamento">
-                <Send className="mr-2 h-5 w-5" />
-                Solicitar Orçamento para Estes Produtos
+              <a href="/catalogo">
+                <Package className="mr-2 h-5 w-5" />
+                Ver Catálogo Completo
               </a>
             </Button>
+            <a href="#orcamento" className="text-sm font-medium text-gray-500 transition-colors hover:text-[#1e4c36]">
+              ou solicite um orçamento →
+            </a>
           </div>
         </div>
       </section>
