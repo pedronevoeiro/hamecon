@@ -72,6 +72,7 @@ export default function CheckoutPage() {
             sku: i.sku,
             preco: i.preco,
             qty: i.qty,
+            cor: i.cor || null,
           })),
           total,
         }),
@@ -341,9 +342,20 @@ export default function CheckoutPage() {
                         />
                       </div>
                       <div className="flex flex-1 flex-col justify-between">
-                        <p className="line-clamp-1 text-xs font-medium text-gray-900">
-                          {item.nome}
-                        </p>
+                        <div>
+                          <p className="line-clamp-1 text-xs font-medium text-gray-900">
+                            {item.nome}
+                          </p>
+                          {item.cor && (
+                            <div className="mt-0.5 flex items-center gap-1">
+                              <span
+                                className="inline-block h-2.5 w-2.5 rounded-full border border-gray-200"
+                                style={{ backgroundColor: item.corHex || "#9CA3AF" }}
+                              />
+                              <span className="text-[10px] text-gray-500">{item.cor}</span>
+                            </div>
+                          )}
+                        </div>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-1">
                             <button

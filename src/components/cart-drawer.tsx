@@ -17,13 +17,11 @@ export function CartDrawer() {
 
   return (
     <>
-      {/* Backdrop */}
       <div
         className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
         onClick={() => setIsOpen(false)}
       />
 
-      {/* Drawer */}
       <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col bg-white shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between border-b px-6 py-4">
@@ -70,10 +68,9 @@ export function CartDrawer() {
             <div className="space-y-4">
               {items.map((item) => (
                 <div
-                  key={item.id}
+                  key={`${item.id}-${item.cor || "default"}`}
                   className="flex gap-4 rounded-xl border border-gray-100 bg-gray-50/50 p-3"
                 >
-                  {/* Image */}
                   <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
@@ -83,7 +80,6 @@ export function CartDrawer() {
                     />
                   </div>
 
-                  {/* Details */}
                   <div className="flex flex-1 flex-col justify-between">
                     <div>
                       <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
@@ -92,12 +88,23 @@ export function CartDrawer() {
                       <p className="line-clamp-2 text-sm font-medium text-gray-900">
                         {item.nome}
                       </p>
+                      {item.cor && (
+                        <div className="mt-1 flex items-center gap-1.5">
+                          <span
+                            className="inline-block h-3 w-3 rounded-full border border-gray-200"
+                            style={{ backgroundColor: item.corHex || "#9CA3AF" }}
+                          />
+                          <span className="text-[11px] text-gray-500">
+                            {item.cor}
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
                         <button
-                          onClick={() => updateQty(item.id, item.qty - 1)}
+                          onClick={() => updateQty(item.id, item.qty - 1, item.cor)}
                           disabled={item.qty <= 1}
                           className="flex h-7 w-7 items-center justify-center rounded-md border border-gray-200 text-gray-500 transition-colors hover:bg-gray-100 disabled:opacity-40"
                         >
@@ -107,7 +114,7 @@ export function CartDrawer() {
                           {item.qty}
                         </span>
                         <button
-                          onClick={() => updateQty(item.id, item.qty + 1)}
+                          onClick={() => updateQty(item.id, item.qty + 1, item.cor)}
                           className="flex h-7 w-7 items-center justify-center rounded-md border border-gray-200 text-gray-500 transition-colors hover:bg-gray-100"
                         >
                           <Plus className="h-3 w-3" />
@@ -119,7 +126,7 @@ export function CartDrawer() {
                           {formatPrice(item.preco * item.qty)}
                         </p>
                         <button
-                          onClick={() => removeItem(item.id)}
+                          onClick={() => removeItem(item.id, item.cor)}
                           className="text-gray-300 transition-colors hover:text-red-500"
                         >
                           <Trash2 className="h-4 w-4" />

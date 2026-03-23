@@ -16,6 +16,7 @@ type OrderItem = {
   sku: string;
   preco: number;
   qty: number;
+  cor: string | null;
 };
 
 type OrderData = {
@@ -62,7 +63,7 @@ export async function POST(request: Request) {
         (i) => `
       <tr>
         <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">${i.sku}</td>
-        <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">${i.nome}</td>
+        <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">${i.nome}${i.cor ? ` <span style="color: #718096;">(${i.cor})</span>` : ""}</td>
         <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: center;">${i.qty}</td>
         <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: right;">${formatPrice(i.preco)}/un</td>
         <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: bold;">${formatPrice(i.preco * i.qty)}</td>
@@ -131,7 +132,7 @@ export async function POST(request: Request) {
     </div>`;
 
     const itemsList = data.items
-      .map((i) => `<li style="padding: 4px 0;">${i.nome} (${i.sku}) — ${i.qty}x ${formatPrice(i.preco)}/un</li>`)
+      .map((i) => `<li style="padding: 4px 0;">${i.nome}${i.cor ? ` (${i.cor})` : ""} (${i.sku}) — ${i.qty}x ${formatPrice(i.preco)}/un</li>`)
       .join("");
 
     const htmlClient = `

@@ -1,11 +1,18 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import { Search, X, ChevronDown, ShoppingBag, Plus, Check } from "lucide-react";
+import { Search, X, ChevronDown, ShoppingBag, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/cart-context";
 import { toast } from "sonner";
 import catalogData from "@/data/catalogo.json";
+
+type ProductColor = {
+  nome: string;
+  hex: string;
+  img: string;
+  imgIdx: number;
+};
 
 type Product = {
   id: number;
@@ -18,6 +25,7 @@ type Product = {
   imgs: { src: string; alt: string }[];
   cat: string;
   estoque: boolean;
+  cores: ProductColor[];
 };
 
 const products = catalogData as Product[];
@@ -28,6 +36,42 @@ function formatPrice(value: number) {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
+/** Color picker shown inline on cards and in modal */
+function ColorPicker({
+  colors,
+  selected,
+  onSelect,
+  size = "sm",
+}: {
+  colors: ProductColor[];
+  selected: string | null;
+  onSelect: (color: ProductColor) => void;
+  size?: "sm" | "md";
+}) {
+  const dim = size === "sm" ? "h-5 w-5" : "h-6 w-6";
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {colors.map((c) => (
+        <button
+          key={c.nome}
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onSelect(c);
+          }}
+          title={c.nome}
+          className={`${dim} rounded-full border-2 transition-all ${
+            selected === c.nome
+              ? "border-[#1e4c36] ring-2 ring-[#1e4c36]/20"
+              : "border-gray-200 hover:border-gray-400"
+          }`}
+          style={{ backgroundColor: c.hex }}
+        />
+      ))}
+    </div>
+  );
+}
+
 export default function CatalogoPage() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("Todos");
@@ -36,18 +80,40 @@ export default function CatalogoPage() {
   );
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [mainImage, setMainImage] = useState(0);
+  const [modalColor, setModalColor] = useState<string | null>(null);
+  // Track selected color per product id for the grid cards
+  const [cardColors, setCardColors] = useState<Record<number, ProductColor>>({});
+
   const { addItem, setIsOpen: setCartOpen } = useCart();
 
   const handleAddItem = useCallback(
-    (p: { id: number; nome: string; sku: string; preco: number; img: string }) => {
-      addItem(p);
-      toast.success(`${p.nome} adicionado ao carrinho`, {
-        action: {
-          label: "Ver carrinho",
-          onClick: () => setCartOpen(true),
-        },
-        duration: 3000,
+    (p: Product, color?: ProductColor | null) => {
+      // If product has colors and none selected, prompt
+      if (p.cores.length > 0 && !color) {
+        toast.error("Selecione uma cor antes de adicionar", { duration: 2000 });
+        return;
+      }
+      addItem({
+        id: p.id,
+        nome: p.nome,
+        sku: p.sku,
+        preco: p.preco,
+        img: color?.img || p.img,
+        cor: color?.nome,
+        corHex: color?.hex,
       });
+      toast.success(
+        color
+          ? `${p.nome} (${color.nome}) adicionado`
+          : `${p.nome} adicionado`,
+        {
+          action: {
+            label: "Ver carrinho",
+            onClick: () => setCartOpen(true),
+          },
+          duration: 3000,
+        }
+      );
     },
     [addItem, setCartOpen]
   );
@@ -87,10 +153,12 @@ export default function CatalogoPage() {
   const openProduct = useCallback((p: Product) => {
     setSelectedProduct(p);
     setMainImage(0);
+    setModalColor(null);
   }, []);
 
   const closeModal = useCallback(() => {
     setSelectedProduct(null);
+    setModalColor(null);
   }, []);
 
   const categoryCounts = useMemo(() => {
@@ -202,68 +270,91 @@ export default function CatalogoPage() {
               </div>
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {filtered.map((p) => (
-                  <div
-                    key={p.id}
-                    className="group overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm transition-all hover:border-[#1e4c36]/30 hover:shadow-lg"
-                  >
-                    <button
-                      onClick={() => openProduct(p)}
-                      className="w-full text-left"
+                {filtered.map((p) => {
+                  const selectedCardColor = cardColors[p.id] || null;
+                  const cardImg = selectedCardColor?.img || p.img;
+
+                  return (
+                    <div
+                      key={p.id}
+                      className="group overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm transition-all hover:border-[#1e4c36]/30 hover:shadow-lg"
                     >
-                      <div className="relative aspect-square overflow-hidden bg-gray-50">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={p.img}
-                          alt={p.nome}
-                          loading="lazy"
-                          className="h-full w-full object-contain p-3 transition-transform duration-300 group-hover:scale-105"
-                        />
-                        {p.imgs.length > 1 && (
-                          <span className="absolute left-3 top-3 rounded-full bg-[#1e4c36] px-2.5 py-0.5 text-[11px] font-semibold text-white shadow">
-                            {p.imgs.length} fotos
-                          </span>
-                        )}
-                      </div>
-                      <div className="p-4">
-                        <p className="text-[11px] font-medium uppercase tracking-wider text-gray-400">
-                          {p.sku}
-                        </p>
-                        <span className="mt-0.5 inline-block rounded bg-gray-100 px-2 py-0.5 text-[11px] text-gray-500">
-                          {p.cat}
-                        </span>
-                        <h3 className="mt-1.5 line-clamp-2 text-sm font-semibold leading-snug text-gray-900">
-                          {p.nome}
-                        </h3>
-                        <div className="mt-3 border-t border-gray-100 pt-3">
-                          <p className="text-lg font-bold text-[#1e4c36]">
-                            {formatPrice(p.preco)}<span className="text-xs font-medium text-gray-400">/un</span>
-                          </p>
-                          <p className="text-[11px] text-gray-400">
-                            personalização inclusa
-                          </p>
-                        </div>
-                      </div>
-                    </button>
-                    <div className="px-4 pb-4">
                       <button
-                        onClick={() =>
-                          handleAddItem({
-                            id: p.id,
-                            nome: p.nome,
-                            sku: p.sku,
-                            preco: p.preco,
-                            img: p.img,
-                          })
-                        }
-                        className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#1e4c36] py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#163a29]"
+                        onClick={() => openProduct(p)}
+                        className="w-full text-left"
                       >
-                        <Plus className="h-4 w-4" />
-                        Adicionar ao carrinho
+                        <div className="relative aspect-square overflow-hidden bg-gray-50">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={cardImg}
+                            alt={p.nome}
+                            loading="lazy"
+                            className="h-full w-full object-contain p-3 transition-transform duration-300 group-hover:scale-105"
+                          />
+                          {p.imgs.length > 1 && (
+                            <span className="absolute left-3 top-3 rounded-full bg-[#1e4c36] px-2.5 py-0.5 text-[11px] font-semibold text-white shadow">
+                              {p.imgs.length} fotos
+                            </span>
+                          )}
+                        </div>
+                        <div className="p-4 pb-2">
+                          <p className="text-[11px] font-medium uppercase tracking-wider text-gray-400">
+                            {p.sku}
+                          </p>
+                          <span className="mt-0.5 inline-block rounded bg-gray-100 px-2 py-0.5 text-[11px] text-gray-500">
+                            {p.cat}
+                          </span>
+                          <h3 className="mt-1.5 line-clamp-2 text-sm font-semibold leading-snug text-gray-900">
+                            {p.nome}
+                          </h3>
+                          <div className="mt-3 border-t border-gray-100 pt-3">
+                            <p className="text-lg font-bold text-[#1e4c36]">
+                              {formatPrice(p.preco)}
+                              <span className="text-xs font-medium text-gray-400">
+                                /un
+                              </span>
+                            </p>
+                            <p className="text-[11px] text-gray-400">
+                              personalização inclusa
+                            </p>
+                          </div>
+                        </div>
                       </button>
+
+                      {/* Color picker + Add to cart */}
+                      <div className="space-y-2 px-4 pb-4">
+                        {p.cores.length > 0 && (
+                          <div>
+                            <p className="mb-1.5 text-[11px] font-medium text-gray-500">
+                              {selectedCardColor
+                                ? `Cor: ${selectedCardColor.nome}`
+                                : "Selecione a cor:"}
+                            </p>
+                            <ColorPicker
+                              colors={p.cores}
+                              selected={selectedCardColor?.nome || null}
+                              onSelect={(c) =>
+                                setCardColors((prev) => ({
+                                  ...prev,
+                                  [p.id]: c,
+                                }))
+                              }
+                            />
+                          </div>
+                        )}
+                        <button
+                          onClick={() =>
+                            handleAddItem(p, selectedCardColor)
+                          }
+                          className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#1e4c36] py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#163a29]"
+                        >
+                          <Plus className="h-4 w-4" />
+                          Adicionar ao carrinho
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -272,111 +363,161 @@ export default function CatalogoPage() {
 
       {/* Modal */}
       {selectedProduct && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) closeModal();
-          }}
-        >
-          <div className="relative max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
-            <button
-              onClick={closeModal}
-              className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-700"
-            >
-              <X className="h-5 w-5" />
-            </button>
-
-            <div className="grid md:grid-cols-2">
-              {/* Gallery */}
-              <div className="bg-gray-50 p-6 md:rounded-l-2xl">
-                <div className="relative flex aspect-square items-center justify-center overflow-hidden rounded-xl bg-white">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={
-                      selectedProduct.imgs[mainImage]?.src ||
-                      selectedProduct.img
-                    }
-                    alt={selectedProduct.nome}
-                    className="max-h-full max-w-full object-contain p-4"
-                  />
-                </div>
-                {selectedProduct.imgs.length > 1 && (
-                  <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
-                    {selectedProduct.imgs.map((img, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setMainImage(i)}
-                        className={`flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border-2 bg-white transition-colors ${
-                          mainImage === i
-                            ? "border-[#1e4c36]"
-                            : "border-transparent hover:border-gray-300"
-                        }`}
-                      >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={img.src}
-                          alt={`Foto ${i + 1}`}
-                          className="max-h-full max-w-full object-contain p-1"
-                        />
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Info */}
-              <div className="p-6 md:p-8">
-                <p className="text-xs font-medium uppercase tracking-widest text-gray-400">
-                  {selectedProduct.sku}
-                </p>
-                <h2 className="mt-2 text-xl font-bold text-gray-900">
-                  {selectedProduct.nome}
-                </h2>
-
-                <div className="mt-4 rounded-xl bg-emerald-50 p-4">
-                  <p className="text-2xl font-bold text-[#1e4c36]">
-                    {formatPrice(selectedProduct.preco)}<span className="text-sm font-medium text-gray-400">/un</span>
-                  </p>
-                  <p className="mt-1 text-xs text-gray-500">
-                    personalização inclusa
-                  </p>
-                </div>
-
-                {selectedProduct.descricao_html ? (
-                  <div
-                    className="prose prose-sm mt-5 max-h-48 overflow-y-auto text-gray-600 [&_strong]:text-gray-800"
-                    dangerouslySetInnerHTML={{
-                      __html: selectedProduct.descricao_html,
-                    }}
-                  />
-                ) : selectedProduct.descricao ? (
-                  <p className="mt-5 max-h-48 overflow-y-auto text-sm leading-relaxed text-gray-600">
-                    {selectedProduct.descricao}
-                  </p>
-                ) : null}
-
-                <Button
-                  size="lg"
-                  className="mt-6 w-full bg-[#1e4c36] hover:bg-[#163a29]"
-                  onClick={() => {
-                    handleAddItem({
-                      id: selectedProduct.id,
-                      nome: selectedProduct.nome,
-                      sku: selectedProduct.sku,
-                      preco: selectedProduct.preco,
-                      img: selectedProduct.img,
-                    });
-                    closeModal();
-                  }}
-                >
-                  <ShoppingBag className="mr-2 h-4 w-4" />
-                  Adicionar ao carrinho
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <ModalDetail
+          product={selectedProduct}
+          mainImage={mainImage}
+          setMainImage={setMainImage}
+          modalColor={modalColor}
+          setModalColor={setModalColor}
+          onClose={closeModal}
+          onAdd={handleAddItem}
+        />
       )}
     </>
+  );
+}
+
+/** Product detail modal — extracted to keep the main component clean */
+function ModalDetail({
+  product,
+  mainImage,
+  setMainImage,
+  modalColor,
+  setModalColor,
+  onClose,
+  onAdd,
+}: {
+  product: Product;
+  mainImage: number;
+  setMainImage: (i: number) => void;
+  modalColor: string | null;
+  setModalColor: (c: string | null) => void;
+  onClose: () => void;
+  onAdd: (p: Product, color?: ProductColor | null) => void;
+}) {
+  const selectedColor = product.cores.find((c) => c.nome === modalColor) || null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="relative max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
+        <button
+          onClick={onClose}
+          className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-700"
+        >
+          <X className="h-5 w-5" />
+        </button>
+
+        <div className="grid md:grid-cols-2">
+          {/* Gallery */}
+          <div className="bg-gray-50 p-6 md:rounded-l-2xl">
+            <div className="relative flex aspect-square items-center justify-center overflow-hidden rounded-xl bg-white">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={
+                  product.imgs[mainImage]?.src || product.img
+                }
+                alt={product.nome}
+                className="max-h-full max-w-full object-contain p-4"
+              />
+            </div>
+            {product.imgs.length > 1 && (
+              <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+                {product.imgs.map((img, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setMainImage(i)}
+                    className={`flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border-2 bg-white transition-colors ${
+                      mainImage === i
+                        ? "border-[#1e4c36]"
+                        : "border-transparent hover:border-gray-300"
+                    }`}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={img.src}
+                      alt={`Foto ${i + 1}`}
+                      className="max-h-full max-w-full object-contain p-1"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Info */}
+          <div className="p-6 md:p-8">
+            <p className="text-xs font-medium uppercase tracking-widest text-gray-400">
+              {product.sku}
+            </p>
+            <h2 className="mt-2 text-xl font-bold text-gray-900">
+              {product.nome}
+            </h2>
+
+            <div className="mt-4 rounded-xl bg-emerald-50 p-4">
+              <p className="text-2xl font-bold text-[#1e4c36]">
+                {formatPrice(product.preco)}
+                <span className="text-sm font-medium text-gray-400">/un</span>
+              </p>
+              <p className="mt-1 text-xs text-gray-500">
+                personalização inclusa
+              </p>
+            </div>
+
+            {/* Color selector */}
+            {product.cores.length > 0 && (
+              <div className="mt-5">
+                <p className="mb-2 text-sm font-medium text-gray-700">
+                  Cor:{" "}
+                  <span className="font-normal text-gray-500">
+                    {selectedColor?.nome || "Selecione"}
+                  </span>
+                </p>
+                <ColorPicker
+                  colors={product.cores}
+                  selected={modalColor}
+                  onSelect={(c) => {
+                    setModalColor(c.nome);
+                    setMainImage(c.imgIdx);
+                  }}
+                  size="md"
+                />
+              </div>
+            )}
+
+            {product.descricao_html ? (
+              <div
+                className="prose prose-sm mt-5 max-h-48 overflow-y-auto text-gray-600 [&_strong]:text-gray-800"
+                dangerouslySetInnerHTML={{
+                  __html: product.descricao_html,
+                }}
+              />
+            ) : product.descricao ? (
+              <p className="mt-5 max-h-48 overflow-y-auto text-sm leading-relaxed text-gray-600">
+                {product.descricao}
+              </p>
+            ) : null}
+
+            <Button
+              size="lg"
+              className="mt-6 w-full bg-[#1e4c36] hover:bg-[#163a29]"
+              onClick={() => {
+                onAdd(product, selectedColor);
+                if (product.cores.length === 0 || selectedColor) {
+                  onClose();
+                }
+              }}
+            >
+              <ShoppingBag className="mr-2 h-4 w-4" />
+              Adicionar ao carrinho
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
